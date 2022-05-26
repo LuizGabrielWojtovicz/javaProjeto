@@ -1,0 +1,5 @@
+CREATE TABLE "horarios" (
+	"id"	INTEGER,
+	"onibus"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
