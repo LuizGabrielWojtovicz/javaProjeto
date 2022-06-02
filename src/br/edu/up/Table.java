@@ -35,6 +35,7 @@ public class Table {
 		System.out.println();
 		
 		lineTableInter(txt, bordSub);
+		System.out.println();
 		
 	}
 }

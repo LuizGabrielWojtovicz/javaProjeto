@@ -1,62 +1,20 @@
 package br.edu.up;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+
+import br.edu.up.model.Horario;
+import br.edu.up.model.Onibus;
 
 public class Principal 
 {
-	/*
-	public static void main(String[] args) throws SQLException 
-	{
-
-		String URL = "jdbc:sqlite:C:\\Users\\Aluno\\Desktop\\banco.db";
-		
-		Connection con = DriverManager.getConnection(URL);
-		
-		Statement stmtOnibus = con.createStatement();
-		
-		
-		String querySelect = "SELECT * FROM onibus;";
-		
-		ResultSet resultado = stmtOnibus.executeQuery(querySelect);
-		
-		int contX = 1;
-		while(resultado.next())
-		{
-			int onibusId = resultado.getInt(1);
-			String onibusNome = resultado.getString(2);
-			
-			System.out.println("onibusId " + onibusId);
-			
-			String queryHorarios = "SELECT * FROM Horarios where onibus_id = " + onibusId + ";";
-			
-			Statement stmtOnibus = con.createStatement();
-			
-			ResultSet resultadoHorarios = stmtOnibus.executeQuery(queryHorarios);
-			
-			
-		while (resultadoHorarios.next()) {
-				int horario = resultadoHorarios.getInt(2);
-				String dia = resultadoHorarios.getString(4);
-				
-				System.out.println(horario);
-				
-			}
-			
-			Table.table(horarios);
-			
-			
-		}
-	}*/
-		
-	
-	
-	
-	
+	public static Connection con;
 	@SuppressWarnings("unused")
-	public static void main(String[] args) 
+	public static void main(String[] args) throws Exception 
 	{
-		String URL = "jdbc:sqlite:C:\\Users\\Aluno\\Desktop\\banco.db";
+		String URL = "jdbc:sqlite:.\\banco.db";
 		
 		int chave;
 		String nomeOnibus;
@@ -66,112 +24,199 @@ public class Principal
 		int quebra;
 		
 		try
-		(
-				Connection con = DriverManager.getConnection(URL);
-				
-				Statement stmt = con.createStatement();	
-				
-				Scanner leia = new Scanner(System.in);
-				)
 		{
-			do
-			{
-				System.out.format("1. Cadastrar onibus;\n2. Ver horário dos onibus;\n3. Sair. ");
-				chave = leia.nextInt();
+			con = DriverManager.getConnection(URL);
+			Statement stmt = con.createStatement();	
+			Scanner leitor = new Scanner(System.in);
+			do {
 				
-				if(chave == 3) break;
+			Table.table("1. Cadastrar onibus");
+			Table.table("2. Ver horário dos onibus");
+			Table.table("3. Editar onibus");
+			Table.table("4. Deletar Onibus");
+			Table.table("5. Sair.");
+			
+				chave = leitor.nextInt();
+				
+				if(chave == 5) break;
 				
 				if(chave == 1)
 				{
-					leia.nextLine();
+					leitor.nextLine();
 					System.out.println("Qual o nome do onibus:");
-					nomeOnibus = leia.nextLine();
+					nomeOnibus = leitor.nextLine();
 					
-					String querySelect = "SELECT * FROM onibus WHERE nome = '" + nomeOnibus + "';";
+					List<Onibus> listaOnibus = listarOnibus();
+					boolean jaExiste = false;
 					
-					ResultSet resultado = stmt.executeQuery(querySelect);
-					
-					if (resultado.next()) {
+					if (getOnibus(nomeOnibus) != null) {
 						System.out.println("Já existe um onibus com este nome!");
 						break;
 					}
 					
-					String queryAdd = "INSERT INTO onibus (nome) VALUES (\"" + nomeOnibus + "\");";
+					List<Horario> horarios = new ArrayList();
 					
-					Statement stmtAdd = con.createStatement();
-					stmtAdd.execute(queryAdd);
+					Onibus onibusInserido = inserirOnibus(nomeOnibus);
 					
-					
-					String queryId = "SELECT * FROM onibus WHERE nome = '" + nomeOnibus + "';";
-					
-					ResultSet resultadoId = stmt.executeQuery(querySelect);
-					int onibusId = -1;
-					
-					while (resultadoId.next()) {
-						onibusId = resultadoId.getInt(1);
-					}
-					
-					if (onibusId == -1) {
-						System.out.println("deu errado aqui");
-						break;
-					}
-					
-					
-					int cont = 1;
-					do 
+					int count = 0;
+					while (true)
 					{
-						System.out.format("-Digite '*' para finalizar a adição de horários\n\nDigite o %d° horário", cont++);
-						onibusHorario = leia.nextLine();
+						System.out.format("-Digite '*' para finalizar a adição de horários\n\nDigite o %d° horário", ++count);
+						onibusHorario = leitor.nextLine();
 						
 						if(onibusHorario.charAt(0) == '*') break;
 						
-						String queryInsert = "INSERT INTO Horarios (horario, onibus_id, dia) VALUES (" + onibusHorario + ", " + onibusId + ", 'UTIL')";
+						int horario = converterHorarioEmMinutos(onibusHorario);
 						
-						Statement stmtInsert = con.createStatement();
-						stmtInsert.execute(queryInsert);
-						
-					}while(onibusHorario != "x");
-					cont = 0;
+						inserirHorario(horario, onibusInserido);
+					}
 					
 				}
 				else if(chave == 2)
 				{
-					String querySelect = "SELECT * FROM onibus;";
+					List<Onibus> onibus = listarOnibus();
 					
-					ResultSet resultado = stmt.executeQuery(querySelect);
+					for (Onibus oni: onibus) {
+						Table.table(oni.nome);
+						
+						List<Horario> horarios = listarHorarios(oni);
+						
+						
+						for (Horario hor : horarios) {
+							System.out.println(converterMinutosEmHoras(hor.horario));
+						}
+					}
+				} else if (chave == 3) {
+					leitor.nextLine();
 					
-					int contX = 1;
-					while(resultado.next())
-					{
-						Statement stmtHorarios = con.createStatement();
-						int onibusId = resultado.getInt(1);
-						String onibusNome = resultado.getString(2);
+						System.out.println("Digite o nome do onibus para editar");
+						String onibusNome = leitor.nextLine();
 						
-						System.out.println("\nHorários do ônibus " + onibusNome);
-						
-						String queryHorarios = "SELECT * FROM Horarios where onibus_id = " + onibusId + ";";
-						
-						ResultSet resultadoHorarios = stmtHorarios.executeQuery(queryHorarios);
-						
-						String horarios = "";
-						
-					while (resultadoHorarios.next()) {
-							int horario = resultadoHorarios.getInt(2);
-							String dia = resultadoHorarios.getString(4);
-							
-							System.out.println(horario);
-							
+						Onibus onibus = getOnibus(onibusNome);
+						if (onibus == null) {
+							System.out.println("Este onibus não existe!");
+							break;
 						}
 						
-						/*Table.table(horarios);
-						*/
+						System.out.println("Insira o novo nome:");
 						
+						String novoNome = leitor.nextLine();
+						if (onibusNome == novoNome) {
+							System.out.println("Insira um nome diferente");
+							break;	
+						}
+						
+						if (getOnibus(novoNome) != null) {
+							System.out.println("Ja existe um onibus com esse nome");
+							break;	
+						}
+						
+						updateOnibus(onibus, novoNome);
+						System.out.println("Onibus editado!");
+					}  else if (chave == 4) {
+					leitor.nextLine();
+					
+						System.out.println("Digite o nome do onibus para remover");
+						String onibusNome = leitor.nextLine();
+						
+						Onibus onibus = getOnibus(onibusNome);
+						if (onibus == null) {
+							System.out.println("Este onibus não existe!");
+							break;
+						}
+						
+						
+						
+						deleteOnibus(onibus);
+						System.out.println("Onibus deletado!");
 					}
-				}
-			}while(chave != 3);
+				
+			}while(chave != 5);
 		}catch(SQLException e)
 		{
 			e.printStackTrace();
 		}
+	}
+	
+	static List<Onibus> listarOnibus() throws Exception {
+		 String querySelect = "SELECT * FROM onibus;";
+		 Statement stmt = con.createStatement();
+		 ResultSet resultado = stmt.executeQuery(querySelect);
+		 
+		 List<Onibus> onibus = new ArrayList();
+		 while (resultado.next()) {
+			Onibus oni = new Onibus();
+			oni.id = resultado.getInt(1);
+			oni.nome = resultado.getString(2);
+			onibus.add(oni);
+		}
+		 
+		 return onibus;
+	 }
+	
+	static Onibus getOnibus(String nome) throws Exception {
+		List<Onibus> onibus = listarOnibus();
+		for (Onibus oni: onibus) {
+			if (oni.nome.equals(nome)) {
+				return oni;
+			}
+		}
+		return null;
+	}
+	
+	static List<Horario> listarHorarios(Onibus onibus) throws Exception {
+		 String querySelect = "SELECT * FROM Horarios WHERE onibus_id = '" + onibus.id + "';";
+		 Statement stmt = con.createStatement();
+		 ResultSet resultado = stmt.executeQuery(querySelect);
+		 
+		 List<Horario> horarios = new ArrayList();
+		 while (resultado.next()) {
+			Horario hor = new Horario();
+			hor.id = resultado.getInt(1);
+			hor.horario = resultado.getInt(2);
+			hor.onibus_id = resultado.getInt(3);
+			horarios.add(hor);
+		}
+		 
+		 return horarios;
+	 }
+	
+	static Onibus inserirOnibus(String nome) throws Exception {
+		String queryAdd = "INSERT INTO onibus (nome) VALUES (\"" + nome + "\");";
+		Statement stmtAdd = con.createStatement();
+		stmtAdd.execute(queryAdd);
+		return getOnibus(nome);
+	}
+	
+	static void inserirHorario(int horario, Onibus onibus) throws Exception {
+		String queryAdd = "INSERT INTO Horarios (horario, onibus_id) VALUES ('" + horario + "', '" + onibus.id + "');";
+		Statement stmtAdd = con.createStatement();
+		stmtAdd.execute(queryAdd);
+	}
+	static String converterMinutosEmHoras(int minutos) {
+		int horas = minutos / 60;
+		int min = minutos - (horas * 60);
+		if (min < 10) {
+			return horas + ":0" + min;
+		} else {
+			return horas + ":" + min;
+		}	
+	}
+	
+	static int converterHorarioEmMinutos(String horario) {
+		String[] split = horario.split(":");
+		int horas = Integer.parseInt(split[0]);
+		int minutos = Integer.parseInt(split[1]);
+		return (horas * 60) + minutos;
+	}
+	
+	static void updateOnibus (Onibus onibus, String novoNome) throws SQLException {
+		String queryUpdate = "UPDATE onibus SET nome = '" + novoNome + "' WHERE id = '" + onibus.id + "';";
+		con.createStatement().execute(queryUpdate);
+	}
+	
+	static void deleteOnibus (Onibus onibus) throws SQLException {
+		String queryDelete = "DELETE FROM onibus WHERE id = '" + onibus.id + "';";
+		con.createStatement().execute(queryDelete);
 	}
 }
